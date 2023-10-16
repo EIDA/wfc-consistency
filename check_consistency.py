@@ -185,11 +185,10 @@ if __name__ == "__main__":
     allNets = list(nslce.keys()) # all networks of current node
     for year in os.listdir(archive_path):
         if args.start <= int(year) <= args.end:
-            print(year) # TEST
+            logging.info(year) # TEST
             for network in os.listdir(os.path.join(archive_path, year)):
                 # ignore networks not in FDSN output or networks to be excluded
                 if network in allNets and (not args.exclude or network not in args.exclude):
-                    print(network) # TEST
                     allStas = list(nslce[network].keys()) # all stations of current network
                     for station in os.listdir(os.path.join(archive_path, year, network)):
                         # ignore stations not in current network in FDSN output
