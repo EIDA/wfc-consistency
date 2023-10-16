@@ -1,13 +1,14 @@
 #!/usr/bin/python3
 
 """
-This is a script used for finding incosistencies between archive files, FDSN metadata and WFCatalog database.
-The script prints the files that:
- - are "orphaned" (i.e. without any metadata)
- - are missing in WFCatalog database
- - have inconsistent checksum in WFCatalog database
- - should be removed from wfcatalog (i.e. they are not in archive or are "orphaned")
-The script can take some arguments, look at parse_arguments function.
+This is a script used for finding inconsistencies between archive files, FDSN metadata and WFCatalog database.
+The script produces the following result files:
+ - inconsistent_metadata.txt which includes the files that are "orphaned" (i.e. without any metadata)
+ - missing_in_wfcatalog.txt which includes the files that are missing in WFCatalog database
+ - inconsistent_checksum.txt which includes the files that have inconsistent checksum in WFCatalog database (file produced only if -c option specified)
+ - remove_from_wfcatalog.txt which includes the files that should be removed from wfcatalog (i.e. they are not in archive or are "orphaned")
+ - inappropriate_naming.txt which includes the files that their naming does not follow the usual pattern of NET.STA.LOC.CHAN.NEL.YEAR.JDAY
+The script can take some arguments; look at parse_arguments function for more details or execute "./check_consistency.py -h" for help.
 Simply execute the script with the desired arguments AFTER changing the paths and urls just below import statements according to your system.
 """
 
@@ -36,7 +37,7 @@ def parse_arguments():
     # default values for start and end time (last year)
     sy = datetime.datetime.now().year - 1
     ey = sy
-    desc = 'Script to check incosistencies between archive, metadata and WFCatalog database.'
+    desc = 'Script to check inconsistencies between archive, metadata and WFCatalog database.'
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('-s', '--start', default=sy, type=int,
                         help='Year to start the test (default=last year).')
@@ -44,6 +45,8 @@ def parse_arguments():
                         help='Year to end the test (default=last year).')
     parser.add_argument('-x', '--exclude', default=None,
                         help='List of comma-separated networks to be excluded from this test (e.g. XX,YY,ZZ).')
+    parser.add_argument('-c', '--checksum', action='store_true',
+                        help='Check inconsistency of checksums in WFCatalog. Warning: this test takes a lot of time.')
 
     return parser.parse_args()
 
@@ -137,7 +140,7 @@ def process_file(file):
         # turn years and julian days to dates
         yearDay = datetime.datetime.strptime(parts[-2] + '.' + parts[-1], '%Y.%j').date()
     except:
-        incosistent_file_naming.append(fileName)
+        inconsistent_file_naming.append(fileName)
         return
     meta_OK = False
     # NOTE: files that correspond to a channel not in the location mentioned in the FDSN service output are excluded
@@ -151,13 +154,13 @@ def process_file(file):
                 meta_OK = True
                 break
         if not meta_OK:
-            incosistent_epoch_files.append(fileName)
+            inconsistent_epoch_files.append(fileName)
         elif fileName in all_files_mongo:
-            # check checksum consistency
-            if getMD5Hash(file) != all_files_mongo[fileName]:
-                incosistent_checksum.append(fileName)
+            # check checksum consistency if asked
+            if args.checksum and getMD5Hash(file) != all_files_mongo[fileName]:
+                inconsistent_checksum.append(fileName)
             else:
-                # file is consistent with metadata and exists in WFCatalog with consistent checksum
+                # file is consistent with metadata and exists in WFCatalog
                 archive_files_ok.add(fileName)
             # remove file so only files that should be removed from WFCatalog stay there
             del all_files_mongo[fileName]
@@ -172,13 +175,13 @@ if __name__ == "__main__":
     nslce = getFromFDSN()
 
     # lists to put files according to them appearing as consistent or not between archive, metadata and WFCatalog database
-    incosistent_epoch_files = []
-    incosistent_file_naming = []
+    inconsistent_epoch_files = []
+    inconsistent_file_naming = []
     archive_files_ok = set()
     missing_in_mongo_files = []
-    incosistent_checksum = []
+    inconsistent_checksum = []
 
-    # search archive and find files consistent or inconsistent with metadata and that exist or not or have incosistent checksum in WFCatalog database
+    # search archive and find files consistent or inconsistent with metadata and that exist or not or have inconsistent checksum in WFCatalog database
     allNets = list(nslce.keys()) # all networks of current node
     for year in os.listdir(archive_path):
         if args.start <= int(year) <= args.end:
@@ -199,33 +202,39 @@ if __name__ == "__main__":
                             for channel in os.listdir(os.path.join(archive_path, year, network, station)):
                                 # ignore channels not in FDSN output of current station
                                 if channel.split('.')[0] in allChanns:
-                                    # NOTE: below uncomment either lines for single or multi core execution
-                                    # below 2 lines are for single core code execution
+                                    ### NOTE: below uncomment either lines for single or multi core execution
+                                    ### below 2 lines are for single core code execution
                                     #for file in os.listdir(os.path.join(archive_path, year, network, station, channel)):
                                         #process_file(os.path.join(archive_path, year, network, station, channel, file))
-                                    # below 4 lines are for multi-core code execution
+                                    ### below 4 lines are for multi-core code execution
                                     files = os.listdir(os.path.join(archive_path, year, network, station, channel))
                                     files = [os.path.join(archive_path, year, network, station, channel, f) for f in files]
                                     with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
                                         executor.map(process_file, files)
 
-    # print results
-    print("Files without metadata (i.e. no epoch matching):")
-    print(len(incosistent_epoch_files))
-    print(incosistent_epoch_files[:10])
+    # write results to files
+    with open("inconsistent_metadata.txt", "w") as file:
+        file.write("Files without metadata (i.e. no epoch matching)\n")
+        for item in inconsistent_epoch_files:
+            file.write(item + "\n")
 
-    print("Files missing from WFCatalog database:")
-    print(len(missing_in_mongo_files))
-    print(missing_in_mongo_files[:10])
+    with open("missing_in_wfcatalog.txt", "w") as file:
+        file.write("Files missing from WFCatalog database\n")
+        for item in missing_in_mongo_files:
+            file.write(item + "\n")
 
-    print("Files with incosistent checksum in WFCatalog database:")
-    print(len(incosistent_checksum))
-    print(incosistent_checksum[:10])
+    if args.checksum:
+        with open("inconsistent_checksum.txt", "w") as file:
+            file.write("Files with inconsistent checksum in WFCatalog database\n")
+            for item in inconsistent_checksum:
+                file.write(item + "\n")
 
-    print("Files that should be removed from WFCatalog database:")
-    print(len(all_files_mongo))
-    print(list(all_files_mongo.keys())[:10])
+    with open("remove_from_wfcatalog.txt", "w") as file:
+        file.write("Files that should be removed from WFCatalog database\n")
+        for item in all_files_mongo:
+            file.write(item + "\n")
 
-    print("Files with inappropriate naming:")
-    print(len(incosistent_file_naming))
-    print(incosistent_file_naming[:10])
+    with open("inappropriate_naming.txt", "w") as file:
+        file.write("Files with inappropriate naming\n")
+        for item in inconsistent_file_naming:
+            file.write(item + "\n")
