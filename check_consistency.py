@@ -28,7 +28,7 @@ from concurrent.futures import ThreadPoolExecutor
 client = pymongo.MongoClient(host='localhost', port=27017)
 archive_path = '/darrays/fujidata-thiseio/archive/' # !!! use full path here
 fdsn_station_url = 'https://eida.gein.noa.gr/fdsnws/station/1/query?level=channel&format=text&nodata=404'
-
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO) # if desired modify this line to output logging details to a specified file
 
 def parse_arguments():
     """
@@ -171,7 +171,9 @@ def process_file(file):
 
 if __name__ == "__main__":
     args = parse_arguments()
+    logging.info("Reading files from WFCatalog database")
     all_files_mongo = getFromDB()
+    logging.info("Reading metadata from FDSN station service")
     nslce = getFromFDSN()
 
     # lists to put files according to them appearing as consistent or not between archive, metadata and WFCatalog database
@@ -182,10 +184,11 @@ if __name__ == "__main__":
     inconsistent_checksum = []
 
     # search archive and find files consistent or inconsistent with metadata and that exist or not or have inconsistent checksum in WFCatalog database
+    logging.info("Start searching archive")
     allNets = list(nslce.keys()) # all networks of current node
     for year in os.listdir(archive_path):
         if args.start <= int(year) <= args.end:
-            logging.info(year) # TEST
+            logging.info("Year "+year)
             for network in os.listdir(os.path.join(archive_path, year)):
                 # ignore networks not in FDSN output or networks to be excluded
                 if network in allNets and (not args.exclude or network not in args.exclude):
