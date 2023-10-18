@@ -7,11 +7,11 @@ The project consists of the following files:
 This is a script used for finding inconsistencies between archive files, FDSN station metadata and WFCatalog database.
 
 The script produces the following result files:
- - `inconsistent_metadata.txt`, which includes the files that are *orphaned* (i.e. without any metadata)
- - `missing_in_wfcatalog.txt`, which includes the files that are missing in WFCatalog database
- - `inconsistent_checksum.txt`, which includes the files that have inconsistent checksum in WFCatalog database (file produced only if `-c` option specified)
- - `remove_from_wfcatalog.txt`, which includes the files that should be removed from wfcatalog (i.e. they are not in archive or are *orphaned*)
- - `inappropriate_naming.txt`, which includes the files that their naming does not follow the usual pattern of *NET.STA.LOC.CHAN.NEL.YEAR.JDAY*
+ - `inconsistent_metadata.txt`, which includes the files that are *orphaned* (i.e. without any metadata).
+ - `missing_in_wfcatalog.txt`, which includes the files that are missing in WFCatalog database.
+ - `inconsistent_checksum.txt`, which includes the files that have inconsistent checksum in WFCatalog database (file produced only if `-c` option specified).
+ - `remove_from_wfcatalog.txt`, which includes the files that should be removed from wfcatalog (i.e. they are not in archive or are *orphaned*).
+ - `inappropriate_naming.txt`, which includes the files that their naming does not follow the usual pattern of *NET.STA.LOC.CHAN.NEL.YEAR.JDAY*.
 
 The script can be executed with some options:
  - `-h` or `--help` to print a help message.

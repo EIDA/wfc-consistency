@@ -1,3 +1,12 @@
+# Copyright (C) 2023
+# Petrakopoulos Vasilis
+# EIDA Technical Committee @ National Observatory of Athens, Greece
+#
+# This script is free software: you can redistribute it and/or modify it.
+#
+# This script is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY.
+
 #!/usr/bin/python3
 
 """
