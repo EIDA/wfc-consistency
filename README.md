@@ -30,9 +30,9 @@ Simply execute the script with the desired options **after** changing the paths 
 
 For example, the below line will execute the script to find inconsistencies from the beginning of 2010 until the end of 2022.
 
-'''
+```
 ./check_consistency.py -s 2010 -e 2022
-'''
+```
 
 #### delete_superfluous.py
 This is a script used for removing WFCatalog entries with files that do not exist in both the EIDA FDSN station output and the node's archive.
