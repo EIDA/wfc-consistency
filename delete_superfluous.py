@@ -4,11 +4,17 @@
 # Petrakopoulos Vasilis
 # EIDA Technical Committee @ National Observatory of Athens, Greece
 #
-# This script is free software: you can redistribute it and/or modify it.
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
-# This script is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY.
-
 # This is a script used for removing WFCatalog entries with files that do not exist in both the EIDA FDSN station output and the node archive.
 # The script reads these files from the table "remove_from_wfcatalog" of the "inconsistencies_results.db" SQLite database file,
 # which is produced by executing the "check_consistency.py" script.
