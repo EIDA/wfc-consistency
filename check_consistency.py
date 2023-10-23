@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 # Copyright (C) 2023
 # Petrakopoulos Vasilis
 # EIDA Technical Committee @ National Observatory of Athens, Greece
@@ -7,19 +9,17 @@
 # This script is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY.
 
-#!/usr/bin/python3
+# This is a script used for finding inconsistencies between archive files, FDSN metadata and WFCatalog database.
+# The script produces one inconsistencies_results.db sqlite3 database file with the following tables:
+#  - inconsistent_metadata which includes the files that are "orphaned" (i.e. without any metadata)
+#  - missing_in_wfcatalog which includes the files that are missing in WFCatalog database
+#  - inconsistent_checksum which includes the files that have inconsistent checksum in WFCatalog database (file produced only if -c option specified)
+#  - older_date which includes the files that have been modified after the date they were added in WFCatalog database
+#  - remove_from_wfcatalog which includes the files that should be removed from wfcatalog (i.e. they are not in archive or are "orphaned")
+#  - inappropriate_naming which includes the files that their naming does not follow the usual pattern of NET.STA.LOC.CHAN.NEL.YEAR.JDAY
+# The script can take some arguments; look at parse_arguments function for more details or execute "./check_consistency.py -h" for help.
+# Simply execute the script with the desired arguments AFTER changing the paths and urls just below import statements according to your system.
 
-"""
-This is a script used for finding inconsistencies between archive files, FDSN metadata and WFCatalog database.
-The script produces the following result files:
- - inconsistent_metadata.txt which includes the files that are "orphaned" (i.e. without any metadata)
- - missing_in_wfcatalog.txt which includes the files that are missing in WFCatalog database
- - inconsistent_checksum.txt which includes the files that have inconsistent checksum in WFCatalog database (file produced only if -c option specified)
- - remove_from_wfcatalog.txt which includes the files that should be removed from wfcatalog (i.e. they are not in archive or are "orphaned")
- - inappropriate_naming.txt which includes the files that their naming does not follow the usual pattern of NET.STA.LOC.CHAN.NEL.YEAR.JDAY
-The script can take some arguments; look at parse_arguments function for more details or execute "./check_consistency.py -h" for help.
-Simply execute the script with the desired arguments AFTER changing the paths and urls just below import statements according to your system.
-"""
 
 import urllib.request
 import requests
@@ -30,6 +30,7 @@ import argparse
 import os
 import sys
 import pymongo
+import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -138,6 +139,108 @@ def getFromFDSN():
     return nslce
 
 
+def write_results():
+    """
+    Method to write results to new sqlite3 database
+    """
+    # remove previous database file if exists
+    results_file = os.path.join(os.getcwd(), 'inconsistencies_results.db')
+    if os.path.exists(results_file):
+        os.remove(results_file)
+
+    # create database and tables
+    try:
+        conn = sqlite3.connect('inconsistencies_results.db')
+        cursor = conn.cursor()
+        table_names = ['inconsistent_metadata', 'missing_in_wfcatalog', 'inconsistent_checksum', 'older_date', 'remove_from_wfcatalog', 'inappropriate_naming']
+        for tn in table_names:
+            cursor.execute(f'''
+                CREATE TABLE {tn} (
+                    net TEXT,
+                    sta TEXT,
+                    loc TEXT,
+                    cha TEXT,
+                    year INTEGER,
+                    jday INTEGER,
+                    fileName TEXT PRIMARY KEY
+                )
+                ''')
+    except Exception as ex:
+        logging.Error(ex)
+
+    # insert to inconsistent_metadata
+    data = []
+    for item in inconsistent_epoch_files:
+        parts = item.split('.')
+        data.append((parts[0], parts[1], parts[2], parts[3], parts[5], parts[6], item))
+    sql = 'INSERT INTO inconsistent_metadata (net, sta, loc, cha, year, jday, fileName) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    try:
+        cursor.executemany(sql, data)
+    except Exception as ex:
+        logging.Error(ex)
+
+    # insert to missing_in_wfcatalog
+    data = []
+    for item in missing_in_mongo_files:
+        parts = item.split('.')
+        data.append((parts[0], parts[1], parts[2], parts[3], parts[5], parts[6], item))
+    sql = 'INSERT INTO missing_in_wfcatalog (net, sta, loc, cha, year, jday, fileName) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    try:
+        cursor.executemany(sql, data)
+    except Exception as ex:
+        logging.Error(ex)
+
+    # insert to inconsistent_checksum
+    data = []
+    for item in inconsistent_checksum_files:
+        parts = item.split('.')
+        data.append((parts[0], parts[1], parts[2], parts[3], parts[5], parts[6], item))
+    sql = 'INSERT INTO inconsistent_checksum (net, sta, loc, cha, year, jday, fileName) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    try:
+        cursor.executemany(sql, data)
+    except Exception as ex:
+        logging.Error(ex)
+
+    # insert to older_date
+    data = []
+    for item in older_date_files:
+        parts = item.split('.')
+        data.append((parts[0], parts[1], parts[2], parts[3], parts[5], parts[6], item))
+    sql = 'INSERT INTO older_date (net, sta, loc, cha, year, jday, fileName) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    try:
+        cursor.executemany(sql, data)
+    except Exception as ex:
+        logging.Error(ex)
+
+    # insert to remove_from_wfcatalog
+    data = []
+    for item in all_files_mongo:
+        parts = item.split('.')
+        data.append((parts[0], parts[1], parts[2], parts[3], parts[5], parts[6], item))
+    sql = 'INSERT INTO remove_from_wfcatalog (net, sta, loc, cha, year, jday, fileName) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    try:
+        cursor.executemany(sql, data)
+    except Exception as ex:
+        logging.Error(ex)
+
+    # insert to inappropriate_naming
+    data = []
+    for item in inconsistent_file_naming:
+        parts = item.split('.')
+        try:
+            data.append((parts[0], parts[1], parts[2], parts[3], parts[5], parts[6], item))
+        except Exception as ex:
+            data.append((None, None, None, None, None, None, item))
+    sql = 'INSERT INTO inappropriate_naming (net, sta, loc, cha, year, jday, fileName) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    try:
+        cursor.executemany(sql, data)
+    except Exception as ex:
+        logging.Error(ex)
+
+    conn.commit()
+    conn.close()
+
+
 def process_file(file):
     """
     Method to process each file and append it to the appropriate list
@@ -167,10 +270,8 @@ def process_file(file):
         elif fileName in all_files_mongo:
             # check checksum consistency if asked
             if args.checksum and getMD5Hash(file) != all_files_mongo[fileName]:
-                inconsistent_checksum.append(fileName)
-            else:
-                # file is consistent with metadata and exists in WFCatalog
-                archive_files_ok.add(fileName)
+                inconsistent_checksum_files.append(fileName)
+            # file is consistent with metadata and exists in WFCatalog
             # remove file so only files that should be removed from WFCatalog stay there
             del all_files_mongo[fileName]
         else:
@@ -188,9 +289,9 @@ if __name__ == "__main__":
     # lists to put files according to them appearing as consistent or not between archive, metadata and WFCatalog database
     inconsistent_epoch_files = []
     inconsistent_file_naming = []
-    archive_files_ok = set()
     missing_in_mongo_files = []
-    inconsistent_checksum = []
+    inconsistent_checksum_files = []
+    older_date_files = []
 
     # search archive and find files consistent or inconsistent with metadata and that exist or not or have inconsistent checksum in WFCatalog database
     logging.info("Start searching archive")
@@ -223,29 +324,4 @@ if __name__ == "__main__":
                                     with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
                                         executor.map(process_file, files)
 
-    # write results to files
-    with open("inconsistent_metadata.txt", "w") as file:
-        file.write("Files without metadata (i.e. no epoch matching)\n")
-        for item in inconsistent_epoch_files:
-            file.write(item + "\n")
-
-    with open("missing_in_wfcatalog.txt", "w") as file:
-        file.write("Files missing from WFCatalog database\n")
-        for item in missing_in_mongo_files:
-            file.write(item + "\n")
-
-    if args.checksum:
-        with open("inconsistent_checksum.txt", "w") as file:
-            file.write("Files with inconsistent checksum in WFCatalog database\n")
-            for item in inconsistent_checksum:
-                file.write(item + "\n")
-
-    with open("remove_from_wfcatalog.txt", "w") as file:
-        file.write("Files that should be removed from WFCatalog database\n")
-        for item in all_files_mongo:
-            file.write(item + "\n")
-
-    with open("inappropriate_naming.txt", "w") as file:
-        file.write("Files with inappropriate naming\n")
-        for item in inconsistent_file_naming:
-            file.write(item + "\n")
+    write_results()
