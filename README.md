@@ -6,7 +6,7 @@ The project consists of the following files:
 #### check_consistency.py
 This is a script used for finding inconsistencies between archive files, FDSN station metadata and WFCatalog database.
 
-The script produces one inconsistencies_results.db sqlite3 database file with the following tables:
+The script produces one `inconsistencies_results.db` SQLite database file with the following tables:
  - `inconsistent_metadata`, which includes the files that are *orphaned* (i.e. without any metadata).
  - `missing_in_wfcatalog`, which includes the files that are missing in WFCatalog database.
  - `inconsistent_checksum`, which includes the files that have inconsistent checksum in WFCatalog database (file produced only if `-c` option specified).
@@ -28,10 +28,16 @@ The script can be executed with some options:
 
 Simply execute the script with the desired options **after** changing the paths and URLs just below import statements into the script according to your system.
 
+For example, the below line will execute the script to find inconsistencies from the beginning of 2010 until the end of 2022.
+
+'''
+./check_consistency.py -s 2010 -e 2022
+'''
+
 #### delete_superfluous.py
 This is a script used for removing WFCatalog entries with files that do not exist in both the EIDA FDSN station output and the node's archive.
 
-The script reads these files from from the table `remove_from_wfcatalog` of the `inconsistencies_results.db` sqlite3 database file, which is produced by executing the `check_consistency.py` script.
+The script reads these files from from the table `remove_from_wfcatalog` of the `inconsistencies_results.db` SQLite database file, which is produced by executing the `check_consistency.py` script.
 
 Simply execute the script **after** ensuring that the Mongo client -below import statements into the script- is set according to your system.
 

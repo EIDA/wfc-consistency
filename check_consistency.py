@@ -10,7 +10,7 @@
 # but WITHOUT ANY WARRANTY.
 
 # This is a script used for finding inconsistencies between archive files, FDSN metadata and WFCatalog database.
-# The script produces one inconsistencies_results.db sqlite3 database file with the following tables:
+# The script produces one inconsistencies_results.db SQLite database file with the following tables:
 #  - inconsistent_metadata which includes the files that are "orphaned" (i.e. without any metadata)
 #  - missing_in_wfcatalog which includes the files that are missing in WFCatalog database
 #  - inconsistent_checksum which includes the files that have inconsistent checksum in WFCatalog database (file produced only if -c option specified)
