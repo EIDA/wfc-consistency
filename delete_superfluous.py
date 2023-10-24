@@ -20,16 +20,22 @@
 # which is produced by executing the "check_consistency.py" script.
 # Simply execute the script after ensuring that the mongo client -below import statements- is set according to your system.
 
+
 import pymongo
 import sqlite3
 import os
+import logging
+
 
 # change the below according to your system
 client = pymongo.MongoClient(host='localhost', port=27017)
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO) # if desired modify this line to output logging details to a specified file
+
 
 collection = client.wfrepo.daily_streams
 # connect to database if exists
 if os.path.exists(os.path.join(os.getcwd(), 'inconsistencies_results.db')):
+    logging.info("Retrieving names of files to be removed from WFCatalog")
     conn = sqlite3.connect('inconsistencies_results.db')
     cursor = conn.cursor()
     # retrieve file names of files that need to be removed from WFCatalog
@@ -37,8 +43,10 @@ if os.path.exists(os.path.join(os.getcwd(), 'inconsistencies_results.db')):
     conn.commit()
     conn.close()
 
+    logging.info("Removing files from WFCatalog")
     # remove WFCatalog entries
     for file_id in file_ids:
         collection.delete_one({'fileId': file_id[0]})
+
 
 client.close()

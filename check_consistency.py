@@ -24,7 +24,7 @@
 #  - remove_from_wfcatalog which includes the files that should be removed from wfcatalog (i.e. they are not in archive or are "orphaned")
 #  - inappropriate_naming which includes the files that their naming does not follow the usual pattern of NET.STA.LOC.CHAN.NEL.YEAR.JDAY
 # The script can take some arguments; look at parse_arguments function for more details or execute "./check_consistency.py -h" for help.
-# Simply execute the script with the desired arguments AFTER changing the paths and urls just below import statements according to your system.
+# Simply execute the script with the desired options AFTER changing the paths and urls just below import statements according to your system.
 
 
 import urllib.request

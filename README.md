@@ -44,5 +44,5 @@ Simply execute the script **after** ensuring that the Mongo client -below import
 #### add_missing.py
 Work in progress...
 
-#### update_checksum.py
+#### update_entries.py
 Work in progress...
