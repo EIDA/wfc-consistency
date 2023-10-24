@@ -46,6 +46,7 @@ archive_path = '/darrays/fujidata-thiseio/archive/' # !!! use full path here
 fdsn_station_url = 'https://eida.gein.noa.gr/fdsnws/station/1/query?level=channel&format=text&nodata=404'
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO) # if desired modify this line to output logging details to a specified file
 
+
 def parse_arguments():
     """
     Method to parse arguments to run the script for specified years and to exclude some networks
@@ -92,8 +93,8 @@ def getFromDB():
     """
     collection = client.wfrepo.daily_streams
     # for entries with ts date between start and end and with net not included in the excluded networks
-    # fetch the last file and its checksum included in the files attribute
-    # return a dictionary {name: checksum} for all entries
+    # fetch the last file with its checksum and created date included in the files attribute
+    # return a dictionary {name: (checksum, created)} for all entries
     query_result = list(collection.aggregate([
         {
             "$match": {
@@ -108,16 +109,26 @@ def getFromDB():
         },
         {
             "$project": {
-                "lastFile": { "$arrayElemAt": ["$files", -1] }
+                "lastFile": { "$arrayElemAt": ["$files", -1] },
+                "created": 1
             }
         },
         {
-            "$replaceRoot": { "newRoot": "$lastFile" }
+            "$replaceRoot": {
+                "newRoot": {
+                    "$mergeObjects": [
+                        "$lastFile",
+                        {
+                            "created": "$created"
+                        }
+                    ]
+                }
+            }
         },
     ]))
     client.close()
 
-    return {r["name"]: r["chksm"] for r in query_result}
+    return {r["name"]: (r["chksm"], r["created"]) for r in query_result}
 
 
 def getFromFDSN():
@@ -275,8 +286,11 @@ def process_file(file):
             inconsistent_epoch_files.append(fileName)
         elif fileName in all_files_mongo:
             # check checksum consistency if asked
-            if args.checksum and getMD5Hash(file) != all_files_mongo[fileName]:
+            if args.checksum and getMD5Hash(file) != all_files_mongo[fileName][0]:
                 inconsistent_checksum_files.append(fileName)
+            # check if file was added in WFCatalog before the last time it was modified
+            if all_files_mongo[fileName][1] < datetime.datetime.fromtimestamp(os.path.getmtime(file)):
+                older_date_files.append(fileName)
             # file is consistent with metadata and exists in WFCatalog
             # remove file so only files that should be removed from WFCatalog stay there
             del all_files_mongo[fileName]
@@ -330,4 +344,5 @@ if __name__ == "__main__":
                                     with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
                                         executor.map(process_file, files)
 
+    logging.info("Writing results to SQLite database file")
     write_results()
