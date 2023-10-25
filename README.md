@@ -3,6 +3,17 @@ A project to provide some scripts to check WFCatalog database consistency with t
 
 The project consists of the following files:
 
+### Installation
+
+  - Clone this repository
+  - Create a virtual environment and install dependencies.
+
+    cd wfc-consistency
+    python -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+
+
 #### check_consistency.py
 This is a script used for finding inconsistencies between archive files, FDSN station metadata and WFCatalog database.
 
