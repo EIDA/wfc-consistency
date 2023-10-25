@@ -39,7 +39,7 @@ This is a script used for removing WFCatalog entries with files that do not exis
 
 The script reads these files from from the table `remove_from_wfcatalog` of the `inconsistencies_results.db` SQLite database file, which is produced by executing the `check_consistency.py` script.
 
-Simply execute the script **after** ensuring that the Mongo client -below import statements into the script- is set according to your system.
+Simply execute the script **after** ensuring that the Mongo client just below import statements into the script is set according to your system.
 
 #### add_missing.py
 Work in progress...

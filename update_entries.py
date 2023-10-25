@@ -15,10 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
-# This is a script used for adding entries to WFCatalog for files that are missing,
-# although do exist in both the EIDA FDSN station output and the node archive.
-# The script reads these files from the table "missing_in_wfcatalog" of the "inconsistencies_results.db" SQLite database file,
-# which is produced by executing the "check_consistency.py" script.
+# This is a script used for updating files in WFCatalog with inconsistent checksums or older creation date than last time modified in archive.
+# The script reads these files from the tables "inconsistent_checksum" and "older_date" of the
+# "inconsistencies_results.db" SQLite database file, which is produced by executing the "check_consistency.py" script.
 # Simply execute the script AFTER ensuring that paths and collector options -below import statements- are set according to your system.
 
 
@@ -34,17 +33,17 @@ archive = '/darrays/fujidata-thiseio/archive/' # archive path
 wfcConfigFile = '/home/sysop/Programs/wfcatalogue2023/wfcatalog/collector/config.json' # WFCatalog collector config.json file
 wfcCollectorEnv = '/home/sysop/Programs/wfcatalogue2023/wfcatalog/collector/.env/bin/python' # WFCatalog collector virtual environment
 wfcCollector = '/home/sysop/Programs/wfcatalogue2023/wfcatalog/collector/WFCatalogCollector.py' # WFCatalogCollector.py script
-collectorOptions = ['--flags', '--csegs', '--dir', archive] # options to execute WFCatalogCollector.py script
+collectorOptions = ['--flags', '--csegs', '--update', '--force', '--dir', archive] # options to execute WFCatalogCollector.py script
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO) # if desired modify this line to output logging details to a specified file
 
 
 # connect to SQLite database if exists
 if os.path.exists(os.path.join(os.getcwd(), 'inconsistencies_results.db')):
-    logging.info("Retrieving names of files to be added in WFCatalog")
+    logging.info("Retrieving names of files to be updated in WFCatalog")
     conn = sqlite3.connect('inconsistencies_results.db')
     cursor = conn.cursor()
     # retrieve file names of files to be inserted into WFCatalog
-    file_ids = cursor.execute('SELECT fileName FROM missing_in_wfcatalog').fetchall()
+    file_ids = cursor.execute('SELECT fileName FROM missing_in_wfcatalog UNION SELECT fileName FROM older_date').fetchall()
     conn.commit()
     conn.close()
 
