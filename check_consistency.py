@@ -27,17 +27,15 @@
 # Simply execute the script with the desired options AFTER changing the paths and urls -just below import statements- according to your system.
 
 
-import urllib.request
 import requests
 import datetime
 import hashlib
 import logging
 import argparse
 import os
-import sys
-import pymongo
 import sqlite3
 from concurrent.futures import ThreadPoolExecutor
+import pymongo
 
 
 # change the below according to your system
