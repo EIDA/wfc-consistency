@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/bin/env python3
 
 # Copyright (C) 2023
 # Petrakopoulos Vasilis
@@ -41,9 +41,11 @@ from concurrent.futures import ThreadPoolExecutor
 
 
 # change the below according to your system
-client = pymongo.MongoClient(host='localhost', port=27017)
-archive_path = '/darrays/fujidata-thiseio/archive/' # !!! use full path here
-fdsn_station_url = 'https://eida.gein.noa.gr/fdsnws/station/1/query?level=channel&format=text&nodata=404'
+mongo_uri = os.getenv('WFCC_MONGO_URI', 'mongodb://localhost:27017')
+client = pymongo.MongoClient(mongo_uri)
+archive_path = os.getenv('WFCC_ARCHIVE_PATH', '/data') # !!! use full path here
+fdsn_endpoint = os.getenv('WFCC_FDSN_ENDPOINT', 'rida.gein.nor.gr')
+fdsn_station_url = f"https://{fdsn_endpoint}/fdsnws/station/1/query?level=channel&format=text&nodata=404"
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO) # if desired modify this line to output logging details to a specified file
 
 
