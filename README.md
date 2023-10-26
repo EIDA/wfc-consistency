@@ -70,7 +70,7 @@ Simply execute the script **after** either using appropriate environment variabl
 For example, the below line executes the script to remove WFCatalog entries:
 
 ```
-WFCC_MONGO_URI=mongodb://localhost:27017 WFCC_COLLECTOR_DIR=/home/Programs/wfcatalog/collector ./add_missing.py
+WFCC_ARCHIVE_PATH=/darrays/arhive/ WFCC_COLLECTOR_DIR=/home/Programs/wfcatalog/collector ./add_missing.py
 ```
 
 #### update_entries.py
@@ -83,5 +83,5 @@ Simply execute the script **after** either using appropriate environment variabl
 For example, the below line executes the script to update WFCatalog entries:
 
 ```
-WFCC_MONGO_URI=mongodb://localhost:27017 WFCC_COLLECTOR_DIR=/home/Programs/wfcatalog/collector ./update_entries.py
+WFCC_ARCHIVE_PATH=/darrays/arhive/ WFCC_COLLECTOR_DIR=/home/Programs/wfcatalog/collector ./update_entries.py
 ```
