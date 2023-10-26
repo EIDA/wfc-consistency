@@ -44,7 +44,7 @@ Simply execute the script with the desired options **after** either using approp
 For example, the below line will execute the script to find inconsistencies from the beginning of 2010 until the end of 2022:
 
 ```
-WFCC_MONGO_URI=mongodb://localhost:27017 WFCC_ARCHIVE_PATH=/darrays/arhive/ WFCC_FDSN_ENDPOINT=eida.gein.noa.gr ./check_consistency.py -s 2010 -e 2022
+WFCC_MONGO_URI=mongodb://localhost:27017 WFCC_ARCHIVE_PATH=/darrays/archive/ WFCC_FDSN_ENDPOINT=eida.gein.noa.gr ./check_consistency.py -s 2010 -e 2022
 ```
 
 #### delete_superfluous.py
@@ -70,7 +70,7 @@ Simply execute the script **after** either using appropriate environment variabl
 For example, the below line executes the script to remove WFCatalog entries:
 
 ```
-WFCC_ARCHIVE_PATH=/darrays/arhive/ WFCC_COLLECTOR_DIR=/home/Programs/wfcatalog/collector ./add_missing.py
+WFCC_ARCHIVE_PATH=/darrays/archive/ WFCC_COLLECTOR_DIR=/home/Programs/wfcatalog/collector ./add_missing.py
 ```
 
 #### update_entries.py
@@ -83,5 +83,5 @@ Simply execute the script **after** either using appropriate environment variabl
 For example, the below line executes the script to update WFCatalog entries:
 
 ```
-WFCC_ARCHIVE_PATH=/darrays/arhive/ WFCC_COLLECTOR_DIR=/home/Programs/wfcatalog/collector ./update_entries.py
+WFCC_ARCHIVE_PATH=/darrays/archive/ WFCC_COLLECTOR_DIR=/home/Programs/wfcatalog/collector ./update_entries.py
 ```
