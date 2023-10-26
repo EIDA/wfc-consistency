@@ -12,6 +12,8 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### Files
+
 The project consists of the following files:
 
 #### check_consistency.py
