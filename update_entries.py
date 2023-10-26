@@ -29,11 +29,12 @@ import logging
 
 
 # change the below according to your system
-archive = '/darrays/fujidata-thiseio/archive/' # archive path
-wfcConfigFile = '/home/sysop/Programs/wfcatalogue2023/wfcatalog/collector/config.json' # WFCatalog collector config.json file
-wfcCollectorEnv = '/home/sysop/Programs/wfcatalogue2023/wfcatalog/collector/.env/bin/python' # WFCatalog collector virtual environment
-wfcCollector = '/home/sysop/Programs/wfcatalogue2023/wfcatalog/collector/WFCatalogCollector.py' # WFCatalogCollector.py script
-collectorOptions = ['--flags', '--csegs', '--update', '--force', '--dir', archive] # options to execute WFCatalogCollector.py script
+archive_path = os.getenv('WFCC_ARCHIVE_PATH', '/data')
+wfcCollectorDir = os.getenv('WFCC_COLLECTOR_DIR', '/home/Programs/wfcatalog/collector')
+wfcConfigFile = f'{wfcCollectorDir}/config.json' # WFCatalog collector config.json file
+wfcCollectorEnv = f'{wfcCollectorDir}/.env/bin/python' # WFCatalog collector virtual environment
+wfcCollector = f'{wfcCollectorDir}/WFCatalogCollector.py' # WFCatalogCollector.py script
+collectorOptions = ['--flags', '--csegs', '--update', '--force', '--dir', archive_path] # options to execute WFCatalogCollector.py script
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO) # if desired modify this line to output logging details to a specified file
 
 

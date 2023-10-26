@@ -24,7 +24,8 @@
 #  - remove_from_wfcatalog which includes the files that should be removed from wfcatalog (i.e. they are not in archive or are "orphaned")
 #  - inappropriate_naming which includes the files that their naming does not follow the usual pattern of NET.STA.LOC.CHAN.NEL.YEAR.JDAY
 # The script can take some arguments; look at parse_arguments function for more details or execute "./check_consistency.py -h" for help.
-# Simply execute the script with the desired options AFTER changing the paths and urls -just below import statements- according to your system.
+# Simply execute the script with the desired options AFTER either changing the paths and urls -just below import statements-
+# or using environment variables according to your system.
 
 
 import requests
@@ -42,7 +43,7 @@ import pymongo
 mongo_uri = os.getenv('WFCC_MONGO_URI', 'mongodb://localhost:27017')
 client = pymongo.MongoClient(mongo_uri)
 archive_path = os.getenv('WFCC_ARCHIVE_PATH', '/data') # !!! use full path here
-fdsn_endpoint = os.getenv('WFCC_FDSN_ENDPOINT', 'rida.gein.nor.gr')
+fdsn_endpoint = os.getenv('WFCC_FDSN_ENDPOINT', 'eida.gein.noa.gr')
 fdsn_station_url = f"https://{fdsn_endpoint}/fdsnws/station/1/query?level=channel&format=text&nodata=404"
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO) # if desired modify this line to output logging details to a specified file
 

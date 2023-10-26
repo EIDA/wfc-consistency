@@ -28,7 +28,8 @@ import logging
 
 
 # change the below according to your system
-client = pymongo.MongoClient(host='localhost', port=27017)
+mongo_uri = os.getenv('WFCC_MONGO_URI', 'mongodb://localhost:27017')
+client = pymongo.MongoClient(mongo_uri)
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO) # if desired modify this line to output logging details to a specified file
 
 
