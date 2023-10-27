@@ -36,6 +36,7 @@ import os
 import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 import pymongo
+from fdsnnetextender import FdsnNetExtender
 
 
 # change the below according to your system
@@ -44,8 +45,10 @@ client = pymongo.MongoClient(mongo_uri)
 archive_path = os.getenv('WFCC_ARCHIVE_PATH', '/data') # !!! use full path here
 fdsn_endpoint = os.getenv('WFCC_FDSN_ENDPOINT', 'rida.gein.nor.gr')
 fdsn_station_url = f"https://{fdsn_endpoint}/fdsnws/station/1/query?level=channel&format=text&nodata=404"
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO) # if desired modify this line to output logging details to a specified file
+logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', level=logging.INFO) # if desired modify this line to output logging details to a specified file
 
+
+extender = FdsnNetExtender()
 
 def parse_arguments():
     """
@@ -142,7 +145,10 @@ def getFromFDSN():
     nslce = {}
     for line in linesList:
         parts = line.split('|')
-        n, s, l, c, es, en = parts[0], parts[1], parts[2], parts[3], parts[-2], parts[-1]
+        sn, s, l, c, es, en = parts[0], parts[1], parts[2], parts[3], parts[-2], parts[-1]
+        n = extender.extend(sn, es[0:10])
+        logging.debug("Extended net for %s at %s is %s", sn, es, n)
+
         if n not in nslce:
             nslce[n] = {}
         if s not in nslce[n]:
@@ -316,22 +322,26 @@ if __name__ == "__main__":
     # search archive and find files consistent or inconsistent with metadata and that exist or not or have inconsistent checksum in WFCatalog database
     logging.info("Start searching archive")
     allNets = list(nslce.keys()) # all networks of current node
-    for year in os.listdir(archive_path):
-        if args.start <= int(year) <= args.end:
-            logging.info("Year "+year)
-            for network in os.listdir(os.path.join(archive_path, year)):
-                # ignore networks not in FDSN output or networks to be excluded
-                if network in allNets and (not args.exclude or network not in args.exclude):
+    for network in os.listdir(archive_path):
+        # ignore networks not in FDSN output or networks to be excluded
+        if network in allNets and (not args.exclude or network not in args.exclude):
+            logging.info("Network: %s", network)
+            archive_path_n = os.path.join(archive_path, network)
+            for year in os.listdir(archive_path_n):
+                if args.start <= int(year) <= args.end:
+                    logging.info("Year "+year)
+                    archive_path_n_y = os.path.join(archive_path_n, year)
                     allStas = list(nslce[network].keys()) # all stations of current network
-                    for station in os.listdir(os.path.join(archive_path, year, network)):
+                    for station in os.listdir(archive_path_n_y):
                         # ignore stations not in current network in FDSN output
                         if station in allStas:
+                            archive_path_n_y_s = os.path.join(archive_path_n_y, station)
                             # take all available channels from all available locations of station
                             allChanns = []
                             for location_data in nslce[network][station].values():
                                 for chann in location_data.keys():
                                     allChanns.append(chann)
-                            for channel in os.listdir(os.path.join(archive_path, year, network, station)):
+                            for channel in os.listdir(archive_path_n_y_s):
                                 # ignore channels not in FDSN output of current station
                                 if channel.split('.')[0] in allChanns:
                                     ### NOTE: below uncomment either lines for single or multi core execution
@@ -339,8 +349,8 @@ if __name__ == "__main__":
                                     #for file in os.listdir(os.path.join(archive_path, year, network, station, channel)):
                                         #process_file(os.path.join(archive_path, year, network, station, channel, file))
                                     ### below 4 lines are for multi-core code execution
-                                    files = os.listdir(os.path.join(archive_path, year, network, station, channel))
-                                    files = [os.path.join(archive_path, year, network, station, channel, f) for f in files]
+                                    files = os.listdir(os.path.join(archive_path_n_y_s, channel))
+                                    files = [os.path.join(archive_path_n_y_s, channel, f) for f in files]
                                     with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
                                         executor.map(process_file, files)
 
