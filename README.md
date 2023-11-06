@@ -32,6 +32,8 @@ The schema of all the above tables is the following:
 | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
 | Network code (text, e.g. HL) | Station code (text, e.g. ATH) | Location code (text, e.g. 00) | Channel name (text, e.g. HHE) | Year (integer, e.g. 2023) | Julian day (integer, e.g. 156) | File name (text, e.g. HL.ATH.00.HHE.D.2023.156)
 
+*Note:* The `fileName` attribute is a full path for the `missing_in_wfcatalog`, `inconsistent_checksum`, `older_date` tables, while it is just the name of the file for the rest of the tables. This is because of the way the rest of the scripts of this project need to get the files.
+
 The script can be executed with some options:
  - `-h` or `--help` to print a help message.
  - `-s` or `--start` followed by a number for the year to start the test (default = last year).
@@ -67,10 +69,10 @@ The script reads these files from the table `missing_in_wfcatalog` of the `incon
 
 Simply execute the script **after** either using appropriate environment variables or changing the paths just below *import* statements into the script according to your system. You may also want to change the WFCatalog collector options, look below *import* statements into the script for doing so.
 
-For example, the below line executes the script to remove WFCatalog entries:
+For example, the below line executes the script to add WFCatalog missing entries:
 
 ```
-WFCC_ARCHIVE_PATH=/darrays/archive/ WFCC_COLLECTOR_DIR=/home/Programs/wfcatalog/collector ./add_missing.py
+WFCC_COLLECTOR_DIR=/home/Programs/wfcatalog/collector ./add_missing.py
 ```
 
 #### update_entries.py
@@ -83,5 +85,5 @@ Simply execute the script **after** either using appropriate environment variabl
 For example, the below line executes the script to update WFCatalog entries:
 
 ```
-WFCC_ARCHIVE_PATH=/darrays/archive/ WFCC_COLLECTOR_DIR=/home/Programs/wfcatalog/collector ./update_entries.py
+WFCC_COLLECTOR_DIR=/home/Programs/wfcatalog/collector ./update_entries.py
 ```

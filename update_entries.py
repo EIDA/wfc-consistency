@@ -29,12 +29,11 @@ import logging
 
 
 # change the below according to your system
-archive_path = os.getenv('WFCC_ARCHIVE_PATH', '/data')
 wfcCollectorDir = os.getenv('WFCC_COLLECTOR_DIR', '/home/Programs/wfcatalog/collector')
-wfcConfigFile = f'{wfcCollectorDir}/config.json' # WFCatalog collector config.json file
 wfcCollectorEnv = f'{wfcCollectorDir}/.env/bin/python' # WFCatalog collector virtual environment
 wfcCollector = f'{wfcCollectorDir}/WFCatalogCollector.py' # WFCatalogCollector.py script
-collectorOptions = ['--flags', '--csegs', '--update', '--force', '--dir', archive_path] # options to execute WFCatalogCollector.py script
+collectorOptions = ['--flags', '--csegs', '--update', '--force', '--list'] # options to execute WFCatalogCollector.py script
+batch_size = 500 # the collector script will be executed for batches of this size of files, otherwise bash command size limit might be exceeded
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO) # if desired modify this line to output logging details to a specified file
 
 
@@ -45,33 +44,11 @@ if os.path.exists(os.path.join(os.getcwd(), 'inconsistencies_results.db')):
     cursor = conn.cursor()
     # retrieve file names of files to be inserted into WFCatalog
     file_ids = cursor.execute('SELECT fileName FROM missing_in_wfcatalog UNION SELECT fileName FROM older_date').fetchall()
-    conn.commit()
     conn.close()
 
 
-# open config.json file of WFCatalog collector and add to the "WHITE" field the names of the files to be inserted in WFCatalog
-logging.info("Write to config.json of WFCatalog collector")
-with open(wfcConfigFile, 'r') as config_file:
-    config = json.load(config_file)
-old_white = config["FILTERS"]["WHITE"]
-config["FILTERS"]["WHITE"] = [f[0] for f in file_ids]
-with open(wfcConfigFile, 'w') as config_file:
-    json.dump(config, config_file, indent=2)
-
-
-# execute the WFCatalog collector
-logging.info("Execute WFCatalog collector")
-try:
-    subprocess.run([wfcCollectorEnv, wfcCollector] + collectorOptions)
-except KeyboardInterrupt:
-    # this will enforce the undoing of changes in the config.json file in case of interrupt
-    pass
-
-
-# undo the changes in the config.json file
-logging.info("Undo changes to config.json")
-with open(wfcConfigFile, 'r') as config_file:
-    config = json.load(config_file)
-config["FILTERS"]["WHITE"] = old_white
-with open(wfcConfigFile, 'w') as config_file:
-    json.dump(config, config_file, indent=2)
+# execute the WFCatalog collector in batches
+for i in range(0, len(file_ids), batch_size):
+    batch = [f[0] for f in file_ids[i:i+batch_size]]
+    logging.info(f"Execute WFCatalog collector for batch {int(i/batch_size+1)}")
+    subprocess.run([wfcCollectorEnv, wfcCollector] + collectorOptions + [json.dumps(batch)])

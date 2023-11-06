@@ -201,7 +201,7 @@ def write_results():
     data = []
     for item in missing_in_mongo_files:
         parts = item.split('.')
-        data.append((parts[0], parts[1], parts[2], parts[3], parts[5], parts[6], item))
+        data.append((parts[0], parts[1], parts[2], parts[3], parts[5], parts[6], os.path.join(archive_path, parts[5], parts[0], parts[1], f'{parts[3]}.{parts[4]}', item)))
     sql = 'INSERT INTO missing_in_wfcatalog (net, sta, loc, cha, year, jday, fileName) VALUES (?, ?, ?, ?, ?, ?, ?)'
     try:
         cursor.executemany(sql, data)
@@ -212,7 +212,7 @@ def write_results():
     data = []
     for item in inconsistent_checksum_files:
         parts = item.split('.')
-        data.append((parts[0], parts[1], parts[2], parts[3], parts[5], parts[6], item))
+        data.append((parts[0], parts[1], parts[2], parts[3], parts[5], parts[6], os.path.join(archive_path, parts[5], parts[0], parts[1], f'{parts[3]}.{parts[4]}', item)))
     sql = 'INSERT INTO inconsistent_checksum (net, sta, loc, cha, year, jday, fileName) VALUES (?, ?, ?, ?, ?, ?, ?)'
     try:
         cursor.executemany(sql, data)
@@ -223,7 +223,7 @@ def write_results():
     data = []
     for item in older_date_files:
         parts = item.split('.')
-        data.append((parts[0], parts[1], parts[2], parts[3], parts[5], parts[6], item))
+        data.append((parts[0], parts[1], parts[2], parts[3], parts[5], parts[6], os.path.join(archive_path, parts[5], parts[0], parts[1], f'{parts[3]}.{parts[4]}', item)))
     sql = 'INSERT INTO older_date (net, sta, loc, cha, year, jday, fileName) VALUES (?, ?, ?, ?, ?, ?, ?)'
     try:
         cursor.executemany(sql, data)

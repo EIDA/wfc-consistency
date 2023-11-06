@@ -41,7 +41,6 @@ if os.path.exists(os.path.join(os.getcwd(), 'inconsistencies_results.db')):
     cursor = conn.cursor()
     # retrieve file names of files that need to be removed from WFCatalog
     file_ids = cursor.execute('SELECT fileName FROM remove_from_wfcatalog').fetchall()
-    conn.commit()
     conn.close()
 
     logging.info("Removing files from WFCatalog")
