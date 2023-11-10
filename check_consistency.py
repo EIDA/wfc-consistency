@@ -259,45 +259,55 @@ def write_results():
     conn.close()
 
 
-def process_file(file):
+def process_station(station):
     """
-    Method to process each file and append it to the appropriate list
+    Method to process files of each station and append them to the appropriate list
     """
-    # file is a full path string
-    fileName = file.split('/')[-1]
-    parts = fileName.split('.')
-    try:
-        # turn years and julian days to dates
-        yearDay = datetime.datetime.strptime(parts[-2] + '.' + parts[-1], '%Y.%j').date()
-    except:
-        inconsistent_file_naming.append(fileName)
-        return
-    meta_OK = False
-    # NOTE: files that correspond to a channel not in the location mentioned in the FDSN service output are excluded
-    if parts[2] in nslce[file.split('/')[-4]][file.split('/')[-3]] and parts[3] in nslce[file.split('/')[-4]][file.split('/')[-3]][parts[2]]:
-        # check if there is an FDSN epoch matching file name
-        for epoch in nslce[network][station][parts[2]][parts[3]]:
-            start = datetime.datetime.strptime(epoch[0].split('T')[0], '%Y-%m-%d').date()
-            endEmpty = epoch[1] if epoch[1] else '2200-01-01T00:00:00'
-            end = datetime.datetime.strptime(endEmpty.split('T')[0], '%Y-%m-%d').date()
-            if start <= yearDay <= end:
-                meta_OK = True
-                break
-        if not meta_OK:
-            inconsistent_epoch_files.append(fileName)
-        elif fileName in all_files_mongo:
-            # check checksum consistency if asked
-            if args.checksum and getMD5Hash(file) != all_files_mongo[fileName][0]:
-                inconsistent_checksum_files.append(fileName)
-            # check if file was added in WFCatalog before the last time it was modified
-            if all_files_mongo[fileName][1] < datetime.datetime.fromtimestamp(os.path.getmtime(file)):
-                older_date_files.append(fileName)
-            # file is consistent with metadata and exists in WFCatalog
-            # remove file so only files that should be removed from WFCatalog stay there
-            del all_files_mongo[fileName]
-        else:
-            # file does not exist in WFCatalog whatsoever
-            missing_in_mongo_files.append(fileName)
+    parts = station.split('/') # parts[-1] = station, parts[-2] = network
+    # take all available channels from all available locations of station
+    allChanns = []
+    for location_data in nslce[parts[-2]][parts[-1]].values():
+        for chann in location_data.keys():
+            allChanns.append(chann)
+    for channel in os.listdir(station):
+        # ignore channels not in FDSN output of current station
+        if channel.split('.')[0] in allChanns:
+            for file in os.listdir(os.path.join(station, channel)):
+                fileParts = file.split('.')
+                # fileParts[0] = network, fileParts[1] = station, fileParts[2] = location
+                # fileParts[3] = channel, fileParts[-2] = year, fileParts[-1] = jday
+                try:
+                    # turn years and julian days to dates
+                    yearDay = datetime.datetime.strptime(fileParts[-2] + '.' + fileParts[-1], '%Y.%j').date()
+                except:
+                    inconsistent_file_naming.append(file)
+                    continue
+                meta_OK = False
+                # NOTE: files that correspond to a channel not in the location mentioned in the FDSN service output are excluded
+                if fileParts[2] in nslce[parts[-2]][parts[-1]] and fileParts[3] in nslce[parts[-2]][parts[-1]][fileParts[2]]:
+                    # check if there is an FDSN epoch matching file name
+                    for epoch in nslce[parts[-2]][parts[-1]][fileParts[2]][fileParts[3]]:
+                        start = datetime.datetime.strptime(epoch[0].split('T')[0], '%Y-%m-%d').date()
+                        endEmpty = epoch[1] if epoch[1] else '2200-01-01T00:00:00'
+                        end = datetime.datetime.strptime(endEmpty.split('T')[0], '%Y-%m-%d').date()
+                        if start <= yearDay <= end:
+                            meta_OK = True
+                            break
+                    if not meta_OK:
+                        inconsistent_epoch_files.append(file)
+                    elif file in all_files_mongo:
+                        # check checksum consistency if asked
+                        if args.checksum and getMD5Hash(os.path.join(station, channel, file)) != all_files_mongo[file][0]:
+                            inconsistent_checksum_files.append(file)
+                        # check if file was added in WFCatalog before the last time it was modified
+                        if all_files_mongo[file][1] < datetime.datetime.fromtimestamp(os.path.getmtime(os.path.join(station, channel, file))):
+                            older_date_files.append(file)
+                        # file is consistent with metadata and exists in WFCatalog
+                        # remove file so only files that should be removed from WFCatalog stay there
+                        del all_files_mongo[file]
+                    else:
+                        # file does not exist in WFCatalog whatsoever
+                        missing_in_mongo_files.append(file)
 
 
 if __name__ == "__main__":
@@ -324,26 +334,17 @@ if __name__ == "__main__":
                 # ignore networks not in FDSN output or networks to be excluded
                 if network in allNets and (not args.exclude or network not in args.exclude):
                     allStas = list(nslce[network].keys()) # all stations of current network
-                    for station in os.listdir(os.path.join(archive_path, year, network)):
-                        # ignore stations not in current network in FDSN output
-                        if station in allStas:
-                            # take all available channels from all available locations of station
-                            allChanns = []
-                            for location_data in nslce[network][station].values():
-                                for chann in location_data.keys():
-                                    allChanns.append(chann)
-                            for channel in os.listdir(os.path.join(archive_path, year, network, station)):
-                                # ignore channels not in FDSN output of current station
-                                if channel.split('.')[0] in allChanns:
-                                    ### NOTE: below uncomment either lines for single or multi core execution
-                                    ### below 2 lines are for single core code execution
-                                    #for file in os.listdir(os.path.join(archive_path, year, network, station, channel)):
-                                        #process_file(os.path.join(archive_path, year, network, station, channel, file))
-                                    ### below 4 lines are for multi-core code execution
-                                    files = os.listdir(os.path.join(archive_path, year, network, station, channel))
-                                    files = [os.path.join(archive_path, year, network, station, channel, f) for f in files]
-                                    with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
-                                        executor.map(process_file, files)
+                    # use the above to ignore stations not in current network in FDSN output
+                    ### NOTE: below uncomment either lines for single or multi core execution
+                    ### below 3 lines are for single core code execution
+                    #for station in os.listdir(os.path.join(archive_path, year, network)):
+                        #if station in allStas:
+                            #process_station(os.path.join(archive_path, year, network, station))
+                    ### below 4 lines are for multi-core code execution
+                    stations = os.listdir(os.path.join(archive_path, year, network))
+                    stations = [os.path.join(archive_path, year, network, s) for s in stations if s in allStas]
+                    with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
+                        executor.map(process_station, stations)
 
     logging.info("Writing results to SQLite database file")
     write_results()
