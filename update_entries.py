@@ -31,6 +31,7 @@ import logging
 # change the below according to your system
 wfcCollectorDir = os.getenv('WFCC_COLLECTOR_DIR', '/home/Programs/wfcatalog/collector')
 wfcCollectorEnv = f'{wfcCollectorDir}/.env/bin/python' # WFCatalog collector virtual environment
+wfcConfigFile = f'{wfcCollectorDir}/config.json' # WFCatalog collector config.json file
 wfcCollector = f'{wfcCollectorDir}/WFCatalogCollector.py' # WFCatalogCollector.py script
 collectorOptions = ['--flags', '--csegs', '--update', '--force', '--list'] # options to execute WFCatalogCollector.py script
 batch_size = 500 # the collector script will be executed for batches of this size of files, otherwise bash command size limit might be exceeded
@@ -47,8 +48,31 @@ if os.path.exists(os.path.join(os.getcwd(), 'inconsistencies_results.db')):
     conn.close()
 
 
+# open config.json file of WFCatalog collector to ensure that the WHITE filter does not exclude files to be added
+logging.info("Write to config.json of WFCatalog collector")
+with open(wfcConfigFile, 'r') as config_file:
+    config = json.load(config_file)
+old_white = config["FILTERS"]["WHITE"]
+config["FILTERS"]["WHITE"] = ["*"]
+with open(wfcConfigFile, 'w') as config_file:
+    json.dump(config, config_file, indent=2)
+
+
 # execute the WFCatalog collector in batches
 for i in range(0, len(file_ids), batch_size):
     batch = [f[0] for f in file_ids[i:i+batch_size]]
     logging.info(f"Execute WFCatalog collector for batch {int(i/batch_size+1)}")
-    subprocess.run([wfcCollectorEnv, wfcCollector] + collectorOptions + [json.dumps(batch)])
+    try:
+        subprocess.run([wfcCollectorEnv, wfcCollector] + collectorOptions + [json.dumps(batch)])
+    except KeyboardInterrupt:
+        # this will enforce the undoing of changes in the config.json file in case of interrupt
+        break
+
+
+# undo the changes in the config.json file
+logging.info("Undo changes to config.json")
+with open(wfcConfigFile, 'r') as config_file:
+    config = json.load(config_file)
+config["FILTERS"]["WHITE"] = old_white
+with open(wfcConfigFile, 'w') as config_file:
+    json.dump(config, config_file, indent=2)
