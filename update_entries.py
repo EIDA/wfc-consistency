@@ -43,8 +43,8 @@ if os.path.exists(os.path.join(os.getcwd(), 'inconsistencies_results.db')):
     logging.info("Retrieving names of files to be updated in WFCatalog")
     conn = sqlite3.connect('inconsistencies_results.db')
     cursor = conn.cursor()
-    # retrieve file names of files to be inserted into WFCatalog
-    file_ids = cursor.execute('SELECT fileName FROM missing_in_wfcatalog UNION SELECT fileName FROM older_date').fetchall()
+    # retrieve file names of files to be updated in WFCatalog
+    file_ids = cursor.execute('SELECT fileName FROM inconsistent_checksum UNION SELECT fileName FROM older_date').fetchall()
     conn.close()
 
 
