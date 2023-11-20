@@ -184,7 +184,7 @@ def write_results():
                 )
                 ''')
     except Exception as ex:
-        logging.Error(ex)
+        logging.error(ex)
 
     # insert to inconsistent_metadata
     data = []
@@ -195,7 +195,7 @@ def write_results():
     try:
         cursor.executemany(sql, data)
     except Exception as ex:
-        logging.Error(ex)
+        logging.error(ex)
 
     # insert to missing_in_wfcatalog
     data = []
@@ -206,7 +206,7 @@ def write_results():
     try:
         cursor.executemany(sql, data)
     except Exception as ex:
-        logging.Error(ex)
+        logging.error(ex)
 
     # insert to inconsistent_checksum
     data = []
@@ -217,7 +217,7 @@ def write_results():
     try:
         cursor.executemany(sql, data)
     except Exception as ex:
-        logging.Error(ex)
+        logging.error(ex)
 
     # insert to older_date
     data = []
@@ -228,7 +228,7 @@ def write_results():
     try:
         cursor.executemany(sql, data)
     except Exception as ex:
-        logging.Error(ex)
+        logging.error(ex)
 
     # insert to remove_from_wfcatalog
     data = []
@@ -239,7 +239,7 @@ def write_results():
     try:
         cursor.executemany(sql, data)
     except Exception as ex:
-        logging.Error(ex)
+        logging.error(ex)
 
     # insert to inappropriate_naming
     data = []
@@ -253,7 +253,7 @@ def write_results():
     try:
         cursor.executemany(sql, data)
     except Exception as ex:
-        logging.Error(ex)
+        logging.error(ex)
 
     conn.commit()
     conn.close()
